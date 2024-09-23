@@ -4,7 +4,6 @@
   "main": "index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only api/activities.ts",
-    "build": "tsc",
     "start": "node dist/app.js"
   },
   "dependencies": {
