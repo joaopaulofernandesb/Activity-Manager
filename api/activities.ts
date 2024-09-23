@@ -5,20 +5,20 @@ import utc from 'dayjs/plugin/utc';
 import connectDB from '../config/database';
 import Activity from '../model/activity';
 
-
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 export default async function handler(req: Request, res: Response) {
- // Adicionar cabeçalhos CORS
- res.setHeader('Access-Control-Allow-Origin', '*'); // Permitir todas as origens
- res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS'); // Métodos permitidos
- res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization'); // Cabeçalhos permitidos
+  // Adicionar cabeçalhos CORS
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
- // Verifica se é uma requisição OPTIONS (pré-flight request para CORS)
- if (req.method === 'OPTIONS') {
-   return res.status(200).end(); // Responder imediatamente a requisições OPTIONS
- }
+  // Verifica se é uma requisição OPTIONS (pré-flight request para CORS)
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   await connectDB();
 
   const { method } = req;
@@ -26,10 +26,15 @@ export default async function handler(req: Request, res: Response) {
   switch (method) {
     case 'POST': {
       const { type, cardId } = req.body;
+
+      // Calcular o startTime em UTC-3 e logar para verificar
+      const startTime = dayjs().tz('America/Sao_Paulo').toDate();
+      console.log('Start Time (UTC-3):', startTime);
+
       const activity = new Activity({
         type,
         cardId,
-        startTime: dayjs().tz('America/Sao_Paulo').toDate(),
+        startTime, // Usar o startTime calculado
         endTime: null,
       });
       try {
@@ -45,7 +50,11 @@ export default async function handler(req: Request, res: Response) {
         const activity = await Activity.findById(id);
         if (!activity) return res.status(404).json({ error: 'Atividade não encontrada' });
 
-        activity.endTime = dayjs().tz('America/Sao_Paulo').toDate();
+        // Calcular o endTime em UTC-3 e logar para verificar
+        const endTime = dayjs().tz('America/Sao_Paulo').toDate();
+        console.log('End Time (UTC-3):', endTime);
+
+        activity.endTime = endTime; // Usar o endTime calculado
         await activity.save();
         return res.json(activity);
       } catch (error) {
@@ -56,6 +65,7 @@ export default async function handler(req: Request, res: Response) {
       const { date } = req.query;
       if (!date) return res.status(400).json({ error: 'Data não fornecida' });
 
+      // Garantir que a data de busca seja baseada no fuso horário UTC-3
       const selectedDate = dayjs(date as string).tz('America/Sao_Paulo').startOf('day');
       const nextDay = selectedDate.add(1, 'day');
 
@@ -92,7 +102,7 @@ export default async function handler(req: Request, res: Response) {
       }
     }
     default: {
-      res.setHeader('Allow', ['POST', 'PUT', 'GET']);
+      res.setHeader('Allow', ['POST', 'PUT', 'GET', 'OPTIONS']);
       return res.status(405).end(`Método ${method} não permitido`);
     }
   }
