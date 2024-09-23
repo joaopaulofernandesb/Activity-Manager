@@ -7,9 +7,9 @@
     }
   ],
   "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    }
+    { "src": "/api/activities", "dest": "/api/activities.ts" },
+    { "src": "/api/activitiesopen", "dest": "/api/activitiesopen.ts" },
+    { "src": "/api/check", "dest": "/api/check.ts" },
+    { "src": "/api/(.*)", "dest": "/api/$1" }
   ]
 }
