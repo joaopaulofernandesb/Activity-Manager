@@ -1,5 +1,4 @@
-
-import { VercelRequest, VercelResponse } from '@vercel/node';
+import { Request, Response } from 'express';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
@@ -9,7 +8,7 @@ import Activity from '../model/activity';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: Request, res: Response) {
   await connectDB();
 
   const { method } = req;

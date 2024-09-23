@@ -1,0 +1,14 @@
+{
+    "compilerOptions": {
+      "target": "es6",                           // Compilar para ES6
+      "module": "commonjs",                      // Usar módulos CommonJS
+      "outDir": "./dist",                        // Pasta de saída para o código compilado
+      "strict": true,                            // Habilitar todas as verificações de tipo estrito
+      "esModuleInterop": true,                   // Habilitar interoperabilidade com módulos ES
+      "skipLibCheck": true,                      // Ignorar checagem de tipo de bibliotecas
+      "forceConsistentCasingInFileNames": true   // Forçar uso consistente de maiúsculas e minúsculas
+    },
+    "include": ["api/**/*.ts", "config/**/*.ts", "model/**/*.ts"],
+    "exclude": ["node_modules"]
+  }
+  

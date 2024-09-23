@@ -1,9 +1,9 @@
 
-import { VercelRequest, VercelResponse } from '@vercel/node';
+import { Request, Response } from 'express';
 import connectDB from '../config/database';
 import Activity from '../model/activity';
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: Request, res: Response) {
   await connectDB();
 
   try {
