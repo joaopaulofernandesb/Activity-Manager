@@ -1,15 +1,15 @@
 import { Request, Response } from 'express';
-import dayjs from 'dayjs';
-import timezone from 'dayjs/plugin/timezone';
-import utc from 'dayjs/plugin/utc';
 import connectDB from '../config/database';
 import Activity from '../model/activity';
 
-dayjs.extend(utc);
-dayjs.extend(timezone);
-
-// Forçar o uso do fuso horário UTC-3 (America/Sao_Paulo)
-const timeZone = 'America/Sao_Paulo';
+// Função para obter a data atual em UTC-3 (Brasil/São Paulo)
+function getBrazilTime() {
+  const now = new Date();
+  const utcOffset = now.getTimezoneOffset(); // Offset em minutos da UTC
+  const brazilOffset = -180; // UTC-3 é igual a -180 minutos
+  const localTime = new Date(now.getTime() + (brazilOffset - utcOffset) * 60000);
+  return localTime;
+}
 
 export default async function handler(req: Request, res: Response) {
   // Adicionar cabeçalhos CORS
@@ -31,7 +31,7 @@ export default async function handler(req: Request, res: Response) {
       const { type, cardId } = req.body;
 
       // Definir o horário de início em UTC-3 (Brasil/São Paulo)
-      const startTime = dayjs().tz(timeZone).format(); // Salva como string formatada
+      const startTime = getBrazilTime();
       console.log(`Start Time (UTC-3):`, startTime);
 
       const activity = new Activity({
@@ -55,7 +55,7 @@ export default async function handler(req: Request, res: Response) {
         if (!activity) return res.status(404).json({ error: 'Atividade não encontrada' });
 
         // Definir o horário de término em UTC-3 (Brasil/São Paulo)
-        const endTime = dayjs().tz(timeZone).format(); // Salva como string formatada
+        const endTime = getBrazilTime();
         console.log(`End Time (UTC-3):`, endTime);
 
         activity.endTime = endTime;
@@ -71,20 +71,21 @@ export default async function handler(req: Request, res: Response) {
       if (!date) return res.status(400).json({ error: 'Data não fornecida' });
 
       // Garantir que a data de busca seja baseada no fuso horário UTC-3
-      const selectedDate = dayjs(date as string).tz(timeZone).startOf('day');
-      const nextDay = selectedDate.add(1, 'day');
+      const selectedDate = new Date(`${date}T00:00:00-03:00`); // Forçar UTC-3 no início do dia
+      const nextDay = new Date(selectedDate);
+      nextDay.setDate(nextDay.getDate() + 1); // Próximo dia
 
       try {
         const activities = await Activity.find({
-          startTime: { $gte: selectedDate.toISOString(), $lt: nextDay.toISOString() },
+          startTime: { $gte: selectedDate, $lt: nextDay },
           endTime: { $ne: null }, // Apenas atividades com endTime
         });
 
         const activitiesWithDuration = activities.map(activity => {
-          const startTime = dayjs(activity.startTime).tz(timeZone);
-          const endTime = dayjs(activity.endTime).tz(timeZone);
+          const startTime = new Date(activity.startTime);
+          const endTime = new Date(activity.endTime);
 
-          const durationSeconds = endTime.diff(startTime, 'second');
+          const durationSeconds = Math.floor((endTime.getTime() - startTime.getTime()) / 1000);
           const hours = Math.floor(durationSeconds / 3600);
           const minutes = Math.floor((durationSeconds % 3600) / 60);
           const seconds = durationSeconds % 60;
@@ -107,7 +108,7 @@ export default async function handler(req: Request, res: Response) {
       }
     }
     default: {
-      res.setHeader('Allow', ['POST', 'PUT', 'GET', OPTIONS']);
+      res.setHeader('Allow', ['POST', 'PUT', 'GET', 'OPTIONS']); // Corrigido o uso de 'OPTIONS' como string
       return res.status(405).end(`Método ${method} não permitido`);
     }
   }
