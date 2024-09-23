@@ -1,0 +1,22 @@
+
+{
+  "name": "activity-api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only api/activities.ts",
+    "build": "tsc",
+    "start": "node dist/app.js"
+  },
+  "dependencies": {
+    "dayjs": "^1.11.5",
+    "mongoose": "^6.0.12",
+    "typescript": "^5.0.0",
+    "ts-node": "^10.9.2"
+  },
+  "devDependencies": {
+    "@types/node": "^16.11.7",
+    "@types/mongoose": "^5.11.97",
+    "ts-node-dev": "^2.0.0"
+  }
+}
