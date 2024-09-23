@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@vercel/node": "^3.2.16",
+    "cors": "^2.8.5",
     "dayjs": "^1.11.5",
     "express": "^4.21.0",
     "mongoose": "^6.0.12",
