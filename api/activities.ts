@@ -8,6 +8,9 @@ import Activity from '../model/activity';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+// Definir o fuso horário a partir da variável de ambiente ou usar 'America/Sao_Paulo' como padrão
+const timeZone = process.env.TIMEZONE || 'America/Sao_Paulo';
+
 export default async function handler(req: Request, res: Response) {
   // Adicionar cabeçalhos CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -27,14 +30,14 @@ export default async function handler(req: Request, res: Response) {
     case 'POST': {
       const { type, cardId } = req.body;
 
-      // Calcular o startTime em UTC-3 e logar para verificar
-      const startTime = dayjs().tz('America/Sao_Paulo').toDate();
-      console.log('Start Time (UTC-3):', startTime);
+      // Usar o timeZone vindo da variável de ambiente
+      const startTime = dayjs().tz(timeZone).toDate();
+      console.log(`Start Time (${timeZone}):`, startTime);
 
       const activity = new Activity({
         type,
         cardId,
-        startTime, // Usar o startTime calculado
+        startTime,
         endTime: null,
       });
       try {
@@ -50,11 +53,10 @@ export default async function handler(req: Request, res: Response) {
         const activity = await Activity.findById(id);
         if (!activity) return res.status(404).json({ error: 'Atividade não encontrada' });
 
-        // Calcular o endTime em UTC-3 e logar para verificar
-        const endTime = dayjs().tz('America/Sao_Paulo').toDate();
-        console.log('End Time (UTC-3):', endTime);
+        const endTime = dayjs().tz(timeZone).toDate();
+        console.log(`End Time (${timeZone}):`, endTime);
 
-        activity.endTime = endTime; // Usar o endTime calculado
+        activity.endTime = endTime;
         await activity.save();
         return res.json(activity);
       } catch (error) {
@@ -65,8 +67,7 @@ export default async function handler(req: Request, res: Response) {
       const { date } = req.query;
       if (!date) return res.status(400).json({ error: 'Data não fornecida' });
 
-      // Garantir que a data de busca seja baseada no fuso horário UTC-3
-      const selectedDate = dayjs(date as string).tz('America/Sao_Paulo').startOf('day');
+      const selectedDate = dayjs(date as string).tz(timeZone).startOf('day');
       const nextDay = selectedDate.add(1, 'day');
 
       try {
@@ -76,8 +77,8 @@ export default async function handler(req: Request, res: Response) {
         });
 
         const activitiesWithDuration = activities.map(activity => {
-          const startTime = dayjs(activity.startTime);
-          const endTime = dayjs(activity.endTime);
+          const startTime = dayjs(activity.startTime).tz(timeZone);
+          const endTime = dayjs(activity.endTime).tz(timeZone);
 
           const durationSeconds = endTime.diff(startTime, 'second');
           const hours = Math.floor(durationSeconds / 3600);
