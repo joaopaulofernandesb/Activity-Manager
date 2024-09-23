@@ -8,8 +8,8 @@ import Activity from '../model/activity';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-// Definir o fuso horário a partir da variável de ambiente ou usar 'America/Sao_Paulo' como padrão
-const timeZone = process.env.TIMEZONE || 'America/Sao_Paulo';
+// Forçar o uso do fuso horário UTC-3 (America/Sao_Paulo)
+const timeZone = 'America/Sao_Paulo';
 
 export default async function handler(req: Request, res: Response) {
   // Adicionar cabeçalhos CORS
@@ -30,20 +30,21 @@ export default async function handler(req: Request, res: Response) {
     case 'POST': {
       const { type, cardId } = req.body;
 
-      // Usar o timeZone vindo da variável de ambiente
-      const startTime = dayjs().tz(timeZone).toDate();
-      console.log(`Start Time (${timeZone}):`, startTime);
+      // Definir o horário de início em UTC-3 (Brasil/São Paulo)
+      const startTime = dayjs().tz(timeZone).format(); // Salva como string formatada
+      console.log(`Start Time (UTC-3):`, startTime);
 
       const activity = new Activity({
         type,
         cardId,
         startTime,
-        endTime: null,
+        endTime: null, // Final será adicionado depois
       });
       try {
         await activity.save();
         return res.status(201).json(activity);
       } catch (error) {
+        console.error('Erro ao salvar atividade', error);
         return res.status(500).json({ error: 'Erro ao salvar atividade' });
       }
     }
@@ -53,13 +54,15 @@ export default async function handler(req: Request, res: Response) {
         const activity = await Activity.findById(id);
         if (!activity) return res.status(404).json({ error: 'Atividade não encontrada' });
 
-        const endTime = dayjs().tz(timeZone).toDate();
-        console.log(`End Time (${timeZone}):`, endTime);
+        // Definir o horário de término em UTC-3 (Brasil/São Paulo)
+        const endTime = dayjs().tz(timeZone).format(); // Salva como string formatada
+        console.log(`End Time (UTC-3):`, endTime);
 
         activity.endTime = endTime;
         await activity.save();
         return res.json(activity);
       } catch (error) {
+        console.error('Erro ao atualizar atividade', error);
         return res.status(500).json({ error: 'Erro ao atualizar atividade' });
       }
     }
@@ -67,13 +70,14 @@ export default async function handler(req: Request, res: Response) {
       const { date } = req.query;
       if (!date) return res.status(400).json({ error: 'Data não fornecida' });
 
+      // Garantir que a data de busca seja baseada no fuso horário UTC-3
       const selectedDate = dayjs(date as string).tz(timeZone).startOf('day');
       const nextDay = selectedDate.add(1, 'day');
 
       try {
         const activities = await Activity.find({
-          startTime: { $gte: selectedDate.toDate(), $lt: nextDay.toDate() },
-          endTime: { $ne: null },
+          startTime: { $gte: selectedDate.toISOString(), $lt: nextDay.toISOString() },
+          endTime: { $ne: null }, // Apenas atividades com endTime
         });
 
         const activitiesWithDuration = activities.map(activity => {
@@ -103,7 +107,7 @@ export default async function handler(req: Request, res: Response) {
       }
     }
     default: {
-      res.setHeader('Allow', ['POST', 'PUT', 'GET', 'OPTIONS']);
+      res.setHeader('Allow', ['POST', 'PUT', 'GET', OPTIONS']);
       return res.status(405).end(`Método ${method} não permitido`);
     }
   }
